@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
+<Root>
+  <Module  name = "HealerHelper"
+    movie       = "HealerHelper\HealerHelper.swf"
+    flags       = "GMF_CFG_STORE_USER_CONFIG | GMF_DONT_UNLOAD"
+    depth_layer = "Top"
+    sub_depth   = "10"
+    variable    = "HealerHelper"
+    criteria    = "HealerHelper &amp;&amp; (guimode &amp; (GUIMODEFLAGS_INPLAY | GUIMODEFLAGS_ENABLEALLGUI))"
+    config_name = "HealerHelper_Cfg"
+  />
+</Root>

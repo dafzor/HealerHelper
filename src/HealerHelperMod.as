@@ -6,7 +6,8 @@ import com.GameInterface.Game.TargetingInterface;
 import com.GameInterface.Game.CharacterBase;
 import com.GameInterface.Input;
 import com.Utils.Archive;
-
+import com.GameInterface.Log;
+import com.GameInterface.Chat;
 
 /**
  *
@@ -14,19 +15,23 @@ import com.Utils.Archive;
  */
 class HealerHelperMod
 {
-	private var m_prefSuffix: String = "HealerHelper_";
 	private var m_swfRoot: MovieClip; // Our root MovieClip
-	private var m_prefs: Object;
-
-	private var m_selectPartyKeys: Array = new Array(
+	
+	private static var m_prefSuffix: String = "HealerHelper_";
+	private static var m_prefs: Object;
+	
+	private static var m_PlayerTeam: Team;
+	
+	// Keys to apropriate
+	private static var m_selectPartyKeys: Array = new Array(
+		_global.Enums.InputCommand.e_InputCommand_ToggleSelectSelf,
 		_global.Enums.InputCommand.e_InputCommand_SelectTeammember2,
 		_global.Enums.InputCommand.e_InputCommand_SelectTeammember3,
 		_global.Enums.InputCommand.e_InputCommand_SelectTeammember4,
-		_global.Enums.InputCommand.e_InputCommand_SelectTeammember5,
-		_global.Enums.InputCommand.e_InputCommand_SelectTeammember6
+		_global.Enums.InputCommand.e_InputCommand_SelectTeammember5
 	);
 
-	private	var m_modifierKeys: Object = {
+	private	static var m_modifierKeys: Object = {
 		Ctrl: Key.CONTROL,
 		Shift: Key.SHIFT,
 		Alt: Key.ALT
@@ -47,11 +52,15 @@ class HealerHelperMod
 	
 	public function OnLoad()
 	{
+		/*
 		TeamInterface.SignalClientJoinedTeam.Connect(TeamJoin, this);
 		TeamInterface.SignalClientLeftTeam.Connect(TeamLeave, this);
 		TeamInterface.SignalClientJoinedRaid.Connect(TeamJoin, this);
 		TeamInterface.SignalClientLeftRaid.Connect(TeamLeave, this);
-
+		*/
+		
+		RegisterFuncKeys();
+		
 		// creats the DistributedValue options
 		for (var pref in m_prefs) {
 			m_prefs[pref] = DistributedValue.Create(m_prefSuffix + pref);
@@ -60,22 +69,24 @@ class HealerHelperMod
 	
 	public function OnUnload()
 	{
+		/*
 		TeamInterface.SignalClientJoinedTeam.Disconnect(TeamJoin, this);
 		TeamInterface.SignalClientLeftTeam.Disconnect(TeamLeave, this);
 		TeamInterface.SignalClientJoinedRaid.Disconnect(TeamJoin, this);
-		TeamInterface.SignalClientLeftRaid.Disconnect(TeamLeave, this);
-		
-		UnRegisterFuncKeys();
+		TeamInterface.SignalClientLeftRaid.Disconnect(TeamLeave, this);	
+		*/
 
 		// Clears all the DistributedValues
 		for (var name in m_prefs) {
 			m_prefs[name] = undefined;
-		}	
+		}
+		
+		UnRegisterFuncKeys();
 	}
 	
 	public function Activate(config: Archive)
 	{
-		// Loads all teh options defaulting to true if not found
+		// Loads all the options defaulting to true if not found
 		for (var pref in m_prefs) {
 			m_prefs[pref].SetValue(Boolean(config.FindEntry(pref, true)));
 		}
@@ -89,20 +100,22 @@ class HealerHelperMod
 		}
 		return config;
 	}
-
+	
+	/*
 	public function TeamJoin(): Void
 	{
-		RegisterFuncKeys();
+		
 	}
 
 	public function TeamLeave(): Void
 	{
-		UnRegisterFuncKeys();
+		
 	}
-
+	*/
+	
 	public function RegisterFuncKeys(): Void
 	{
-		var num: Number = 2;		
+		var num: Number = 1;
 		for (var key: String in m_selectPartyKeys) {
 			Input.RegisterHotkey(m_selectPartyKeys[key], "HealerHelperMod.FuncKeyPressEvent" + String(num),
 				_global.Enums.Hotkey.eHotkeyDown, 0);
@@ -118,17 +131,20 @@ class HealerHelperMod
 	}
 
 	// TODO: Find a better whay then this hacked up event mapping
-	public function FunKeyPressEvent2() { FuncKeyPressEvent(0); }
-	public function FunKeyPressEvent3() { FuncKeyPressEvent(1); }
-	public function FunKeyPressEvent4() { FuncKeyPressEvent(2); }
-	public function FunKeyPressEvent5() { FuncKeyPressEvent(3); }
-	public function FunKeyPressEvent6() { FuncKeyPressEvent(4); }
+	public static function FuncKeyPressEvent1() { FuncKeyPressEvent(4); } // Self
+	public static function FuncKeyPressEvent2() { FuncKeyPressEvent(3); }
+	public static function FuncKeyPressEvent3() { FuncKeyPressEvent(2); }
+	public static function FuncKeyPressEvent4() { FuncKeyPressEvent(1); }
+	public static function FuncKeyPressEvent5() { FuncKeyPressEvent(0); }
 
 	// Actual event 
-	public function FuncKeyPressEvent(index: Number): Void
+	public static function FuncKeyPressEvent(index: Number): Void
 	{
+		Dbg("called with index= " + String(index));
+		
 		// if not in team self target and exit
 		if (!TeamInterface.IsInTeam(CharacterBase.GetClientCharID())) {
+			Dbg("Alone, selecting self");
 			TargetingInterface.SetTarget(CharacterBase.GetClientCharID());
 			return;
 		}
@@ -142,22 +158,37 @@ class HealerHelperMod
 				break; // We already got one mod key no point checking for more
 			}
 		}
+		
+		Dbg("modifier = " + String(modifier));
 
 		// Starts with the player team by default
 		var team: Team = TeamInterface.GetClientTeamInfo();
 		// Are we in a Raid? and is modifier presser or reversed option enabled and modifier not pressed?
-		if (TeamInterface.IsInRaid(CharacterBase.GetClientCharID()) && (modifier || (reversed && !modifier))) {
+		if (TeamInterface.IsInRaid(CharacterBase.GetClientCharID()) &&
+			((modifier && !reversed) || (reversed && !modifier))) {
 			// Search the raid for a team the player isn't in and changes to that one
 			var raid: Raid = TeamInterface.GetClientRaidInfo();
 			for (var key: String in raid.m_Teams) {
-				if (team != raid.m_Teams[key]) {
+				Dbg("my: " + String(team.m_TeamId) + ", other: " + raid.m_Teams[key].m_TeamId);
+				if (team.m_TeamId != raid.m_Teams[key].m_TeamId) {
 					team = raid.m_Teams[key];
+					Dbg("changing to other team: " + String(team.m_TeamId));
 					break;
 				}
 			}
 		}
-
+		else {
+			Dbg("In party, ignoreing mod key and using own team");
+		}
+		
+		Dbg("using team: " + String(team.m_TeamId));
 		// Target the character in the index position on the team
 		TargetingInterface.SetTarget(team.GetTeamMemberID(index));
+	}
+	
+	public static function Dbg(message: String): Void
+	{
+		//var date: Date = new Date();
+		//Log.Warning(String(date.getTime()) + m_prefSuffix + "debug>", message);
 	}
 }

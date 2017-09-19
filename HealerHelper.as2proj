@@ -48,11 +48,7 @@
   <!-- Executed before build -->
   <preBuildCommand />
   <!-- Executed after build -->
-  <postBuildCommand alwaysRun="False">xcopy "$(ProjectDir)\deployment\Flash\*.*" "C:\Games\Secret World Legends\Interface\" /e /y
-
-xcopy "$(ProjectDir)\deployment\Scripts\*.*" "C:\Games\Secret World Legends\Scripts\" /e /y
-
-xcopy "$(ProjectDir)\src\mod\*.*" "C:\Games\Secret World Legends\Interface\HealerHelper\" /e /y
+  <postBuildCommand alwaysRun="False">xcopy "$(ProjectDir)\src\mod\*.*" "C:\Games\Secret World Legends\Interface\HealerHelper\" /e /y
 
 xcopy "$(OutputFile)" "C:\Games\Secret World Legends\Interface\HealerHelper" /e /y</postBuildCommand>
   <!-- Other project options -->

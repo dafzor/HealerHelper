@@ -1,15 +1,12 @@
-import com.GameInterface.BrowserImageMetadata;
-import com.GameInterface.CharacterCreation.CharacterCreation;
-import com.GameInterface.Game.Character;
+import com.GameInterface.DistributedValue;
 import com.GameInterface.Game.TeamInterface;
 import com.GameInterface.Game.Team;
 import com.GameInterface.Game.Raid;
 import com.GameInterface.Game.TargetingInterface;
-import com.GameInterface.Targeting;
 import com.GameInterface.Game.CharacterBase;
 import com.GameInterface.Input;
 import com.Utils.Archive;
-import com.Utils.ID32;
+
 
 /**
  *
@@ -21,18 +18,18 @@ class HealerHelperMod
 	private var m_swfRoot: MovieClip; // Our root MovieClip
 	private var m_prefs: Object;
 
-	private var m_selectPartyKeys: Object = {
+	private var m_selectPartyKeys: Array = new Array(
 		_global.Enums.InputCommand.e_InputCommand_SelectTeammember2,
 		_global.Enums.InputCommand.e_InputCommand_SelectTeammember3,
 		_global.Enums.InputCommand.e_InputCommand_SelectTeammember4,
 		_global.Enums.InputCommand.e_InputCommand_SelectTeammember5,
 		_global.Enums.InputCommand.e_InputCommand_SelectTeammember6
-	};
+	);
 
 	private	var m_modifierKeys: Object = {
-		Ctrl: Key.Control,
-		Shift: Key.Shift,
-		Alt: Key.Alt
+		Ctrl: Key.CONTROL,
+		Shift: Key.SHIFT,
+		Alt: Key.ALT
 	};
 
 
@@ -80,7 +77,7 @@ class HealerHelperMod
 	{
 		// Loads all teh options defaulting to true if not found
 		for (var pref in m_prefs) {
-			m_pref[pref].SetValue(Boolean(config.FindeEntry(pref, true)));
+			m_prefs[pref].SetValue(Boolean(config.FindEntry(pref, true)));
 		}
 	}
 	
@@ -106,8 +103,8 @@ class HealerHelperMod
 	public function RegisterFuncKeys(): Void
 	{
 		var num: Number = 2;		
-		for (var key in m_selectPartyKeys) {
-			Input.RegisterHotkey(key, "HealerHelperMod.FuncKeyPressEvent" + String(num),
+		for (var key: String in m_selectPartyKeys) {
+			Input.RegisterHotkey(m_selectPartyKeys[key], "HealerHelperMod.FuncKeyPressEvent" + String(num),
 				_global.Enums.Hotkey.eHotkeyDown, 0);
 			num++;
 		}
@@ -115,8 +112,8 @@ class HealerHelperMod
 
 	public function UnRegisterFuncKeys(): Void
 	{
-		for (var key in m_selectPartyKeys) {
-			Input.RegisterHotkey(key, "", _global.Enums.Hotkey.eHotkeyDown, 0);
+		for (var key: String in m_selectPartyKeys) {
+			Input.RegisterHotkey(m_selectPartyKeys[key], "", _global.Enums.Hotkey.eHotkeyDown, 0);
 		}
 	}
 
@@ -131,16 +128,16 @@ class HealerHelperMod
 	public function FuncKeyPressEvent(index: Number): Void
 	{
 		// if not in team self target and exit
-		if (!TeamInterface.IsInTeam(CharacterBase.GetClientCharID()) {
-			TargetingInterface.SetTarget((CharacterBase.GetClientCharID());
+		if (!TeamInterface.IsInTeam(CharacterBase.GetClientCharID())) {
+			TargetingInterface.SetTarget(CharacterBase.GetClientCharID());
 			return;
 		}
 
 		// Check the status of the mod keys and reverse option
-		var reversed: Boolean = m_Prefs.Reversed.GetValue();
+		var reversed: Boolean = m_prefs.Reversed.GetValue();
 		var modifier: Boolean = false;
 		for (var key in m_modifierKeys) {
-			if (Key.isDown(m_modifierKeys[key]) && m_Prefs["SwapOn" + key].GetValue()) {
+			if (Key.isDown(m_modifierKeys[key]) && m_prefs["SwapOn" + key].GetValue()) {
 				modifier = true;
 				break; // We already got one mod key no point checking for more
 			}
@@ -149,7 +146,7 @@ class HealerHelperMod
 		// Starts with the player team by default
 		var team: Team = TeamInterface.GetClientTeamInfo();
 		// Are we in a Raid? and is modifier presser or reversed option enabled and modifier not pressed?
-		if (TeamInterface.IsInRaid(CharacterBase.GetClientCharID() && (modifier || (reversed && !modifier))) {
+		if (TeamInterface.IsInRaid(CharacterBase.GetClientCharID()) && (modifier || (reversed && !modifier))) {
 			// Search the raid for a team the player isn't in and changes to that one
 			var raid: Raid = TeamInterface.GetClientRaidInfo();
 			for (var key: String in raid.m_Teams) {
